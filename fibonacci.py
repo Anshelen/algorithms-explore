@@ -1,3 +1,6 @@
+from functools import lru_cache
+
+
 class FibGenerator:
     """
     Генератор, вычисляющий числа Фибоначчи.
@@ -22,6 +25,11 @@ def find_with_recursion(n: int) -> int:
     return find_with_recursion(n - 1) + find_with_recursion(n - 2)
 
 
+find_with_cache = lru_cache(maxsize=None)(find_with_recursion)
+find_with_cache.__doc__ = 'Поиск числа Фибоначчи по рекурсивному алгоритму с ' \
+                          'использованием кеша.'
+
+
 def find_with_list(n: int) -> int:
     """
     Вычисление числа Фибоначчи с использованием списка.
@@ -41,7 +49,7 @@ def find_with_two_variables(n: int) -> int:
     a, b = 0, 1
     if n == 1:
         return b
-    for i in range(2, n + 1):
+    for _ in range(2, n + 1):
         a, b = b, a + b
     return b
 
@@ -96,7 +104,8 @@ if __name__ == "__main__":
 
     # Дано целое число 1≤n≤40, необходимо вычислить n-е число Фибоначчи
     # (напомним, что F0=0, F1=1 и Fn=Fn−1+Fn−2 при n≥2)
-    functions = [find_with_two_variables, find_with_list, find_with_recursion]
+    functions = [find_with_two_variables, find_with_list,
+                 find_with_recursion, find_with_cache]
     for func in functions:
         assert func(1) == 1
         assert func(2) == 1
