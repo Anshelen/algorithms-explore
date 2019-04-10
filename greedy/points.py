@@ -7,7 +7,11 @@
 from typing import List, Tuple
 
 
-def find(sections: List[Tuple[int, int]]) -> List[int]:
+# Отрезок [a, b] представлен кортежем (a, b)
+Section = Tuple[int, int]
+
+
+def find(sections: List[Section]) -> List[int]:
     """
     Ищет оптимальный список точек через сортировку. Сложность алгоритма зависит
     от сложности сортировки. Обычно O(n*log n).

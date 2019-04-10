@@ -8,7 +8,11 @@
 from typing import List, Tuple
 
 
-def count_price(capacity: int, goods: List[Tuple[int, int]]) -> float:
+# Отрезок [a, b] представлен кортежем (a, b)
+Section = Tuple[int, int]
+
+
+def count_price(capacity: int, goods: List[Section]) -> float:
     """
     Считает максимальную стоимость товаров, которые вмещаются в рюкзак.
     Сложность алгоритма зависит от сложности сортировки. Обычно O(n*log n).

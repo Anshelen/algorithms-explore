@@ -6,7 +6,11 @@
 from typing import List, Tuple
 
 
-def find_naive(points: List[int]) -> List[Tuple[int, int]]:
+# Отрезок [a, b] представлен кортежем (a, b)
+Section = Tuple[int, int]
+
+
+def find_naive(points: List[int]) -> List[Section]:
     """
     Ищет оптимальное количество отрезков через поиск минимальной точки в каждой
     итерации. Алгоритм имеет сложность O(n^2).
@@ -21,7 +25,7 @@ def find_naive(points: List[int]) -> List[Tuple[int, int]]:
     return result
 
 
-def find_sort(points: List[int]) -> List[Tuple[int, int]]:
+def find_sort(points: List[int]) -> List[Section]:
     """
     Ищет оптимальное количество отрезков через сортировку. Алгоритм имеет
     сложность в зависимости от сложности алгоритма сортировки. В лучшем случае

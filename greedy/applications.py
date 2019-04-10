@@ -6,7 +6,11 @@
 from typing import List, Tuple
 
 
-def intersects(a: Tuple[int, int], b: Tuple[int, int]) -> bool:
+# Отрезок [a, b] представлен кортежем (a, b)
+Section = Tuple[int, int]
+
+
+def intersects(a: Section, b: Section) -> bool:
     """
     Проверяет пересекаются ли два отрезка.
 
@@ -17,7 +21,7 @@ def intersects(a: Tuple[int, int], b: Tuple[int, int]) -> bool:
     return not (a[0] >= b[1] or a[1] <= b[0])
 
 
-def find_naive(sections: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+def find_naive(sections: List[Section]) -> List[Section]:
     """
     Ищет комбинацию из максимального количества непересекающихся отрезков через
     поиск отрезка с минимальной правой точкой в каждой итерации.
@@ -33,7 +37,7 @@ def find_naive(sections: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     return result
 
 
-def find_sort(sections: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+def find_sort(sections: List[Section]) -> List[Section]:
     """
     Ищет комбинацию из максимального количества непересекающихся отрезков через
     сортировку отрезков по их правой точке. Сложность зависит от алгоритма
