@@ -8,7 +8,9 @@
 декодировать.
 """
 
-from collections import Counter
+import heapq
+import itertools
+from collections import Counter, namedtuple
 from typing import Dict
 
 
@@ -168,6 +170,46 @@ def decrypt(txt: str, encrypt_dict: Dict[str, str]) -> str:
     return res
 
 
+def encrypt_alternative(txt: str) -> str:
+    """
+    Альтернативная реализация шифрования Хаффмана. Использует мин-кучу heapq из
+    стандартной библиотеки и обход дерева, основанный на полиморфизме. Сложность
+    алгоритма O(n*log n).
+    """
+    if not txt:
+        return ''
+
+    class Node(namedtuple("Node", ["left", "right"])):
+        def walk(self, code_dict, path):
+            self.left.walk(code_dict, path + '0')
+            self.right.walk(code_dict, path + '1')
+
+    class Leaf(namedtuple("Leaf", ["code"])):
+        def walk(self, code_dict, path):
+            code_dict[self.code] = path or '0'
+
+    # Счетчик. Необходим, так как heapq содержит кортежи, то они будут
+    # сравниваться лексиграфически. Это приводит к ошибкам, если будут
+    # сравниваться сущности с разными полями (в нашем случае Node с полем left и
+    # Leaf с полем code.
+    counter = itertools.count()
+
+    heap = [(freq, next(counter), Leaf(ch))
+            for ch, freq in Counter(txt).items()]
+    heapq.heapify(heap)
+
+    while len(heap) > 1:
+        freq_l, _count, left = heapq.heappop(heap)
+        freq_r, _count, right = heapq.heappop(heap)
+        heapq.heappush(
+            heap, (freq_l + freq_r, next(counter), Node(left, right)))
+
+    _freq, _count, root = heapq.heappop(heap)
+    encrypt_dict = {}
+    root.walk(encrypt_dict, '')
+    return ''.join((encrypt_dict[ch] for ch in txt))
+
+
 if __name__ == '__main__':
 
     assert get_encrypt_dict('') == {}
@@ -179,14 +221,15 @@ if __name__ == '__main__':
     assert get_encrypt_dict('abacabad') == {'a': '0', 'b': '10',
                                             'c': '110', 'd': '111'}
 
-    assert encrypt('') == ''
-    assert encrypt('a') == '0'
-    assert encrypt('ab') == '01'
-    assert encrypt('aa') == '00'
-    assert encrypt('abb') == '011'
-    assert encrypt('abc') == '10110'
-    assert encrypt('abacabad') == '01001100100111'
-    assert len(encrypt('beep boop beer!')) == 40
+    for func in [encrypt, encrypt_alternative]:
+        assert func('') == ''
+        assert func('a') == '0'
+        assert func('ab') == '01'
+        assert func('aa') == '00'
+        assert func('abb') == '011'
+        assert func('abc') == '10110'
+        assert func('abacabad') == '01001100100111'
+        assert len(func('beep boop beer!')) == 40
 
     texts = ['', 'a', 'ab', 'aa', 'abb', 'abc', 'abacabad', 'beep boop beer!']
     for text in texts:
