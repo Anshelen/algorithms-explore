@@ -1,3 +1,7 @@
+import math
+from io import StringIO
+
+
 class Heap:
     """
     Очередь с приоритетами, представляющая собой двоичную мин-кучу. Для любой
@@ -147,7 +151,24 @@ class Heap:
         return self.lst.__delitem__(key)
 
     def __str__(self):
-        return self.lst.__str__()
+        total_width = 36
+        output = StringIO()
+        last_row = -1
+        for i, n in enumerate(self.lst):
+            if i:
+                row = int(math.floor(math.log(i + 1, 2)))
+            else:
+                row = 0
+            if row != last_row:
+                output.write('\n')
+            columns = 2 ** row
+            col_width = int(math.floor(total_width / columns))
+            output.write(str(n).center(col_width, ' '))
+            last_row = row
+        output.write('\n')
+        output.write('-' * total_width)
+        output.write('\n')
+        return output.getvalue()
 
     def __len__(self):
         return self.lst.__len__()
