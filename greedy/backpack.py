@@ -24,15 +24,12 @@ def count_price(capacity: int, goods: List[Section]) -> float:
     """
     price = 0
     goods = sorted(goods, key=lambda x: x[0] / x[1], reverse=True)
-    for good in goods:
-        cost = good[0]
-        amount = good[1]
-        if capacity >= amount:
-            capacity -= amount
-            price += cost
-        else:
-            price += capacity / amount * cost
-            break
+    while goods and capacity:
+        good = goods.pop(0)
+        cost, amount = good[0], good[1]
+        can_take = min(capacity, amount)
+        price += can_take / amount * cost
+        capacity -= can_take
     return price
 
 
