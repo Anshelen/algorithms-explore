@@ -91,18 +91,3 @@ def pair_insertion_sort(lst: List):
             else:
                 lst[0] = small
     return lst
-
-
-if __name__ == '__main__':
-
-    for func in [insertion_sort, insertion_sort_with_buffer,
-                 pair_insertion_sort]:
-        assert func([]) == []
-        assert func([1]) == [1]
-        assert func([1, 2]) == [1, 2]
-        assert func([2, 1]) == [1, 2]
-        assert func([2, 1, 3]) == [1, 2, 3]
-        assert func([2, 1, 4, 3, 3, 5]) == [1, 2, 3, 3, 4, 5]
-        assert func([5, 3, 2, 3, 1, 4]) == [1, 2, 3, 3, 4, 5]
-        assert func([3, 3, 2, 1, 4, 5]) == [1, 2, 3, 3, 4, 5]
-        assert func([3, 3, 2, 1, 6, 4, 5]) == [1, 2, 3, 3, 4, 5, 6]

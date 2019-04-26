@@ -6,7 +6,12 @@ import random
 import unittest
 from abc import ABC
 
+from sorts.bubblebasedsorts import bubble_sort, comb_sort, even_odd_sort, \
+    shaker_sort
+from sorts.insertionsort import insertion_sort, insertion_sort_with_buffer, \
+    pair_insertion_sort
 from sorts.introsort import optimized_introsort, _median_sep_index, introsort
+from sorts.mergesort import merge_sort_recursive, merge_sort_iterative
 from sorts.quicksort import _partition, _3_way_partition, quick_sort_random, \
     quick_sort_no_tail_recursion, quick_sort_3_way_partition, \
     quick_sort_no_recursion
@@ -59,8 +64,11 @@ class MedianSepIndexTests(unittest.TestCase):
 class SortTests(ABC):
 
     def verify(self, lst):
-        self.func(lst)
-        self.assertEqual(lst, sorted(lst))
+        res = self.func(lst)
+        if res is None:
+            # Значит была сортировка на месте
+            res = lst
+        self.assertEqual(res, sorted(lst))
 
     def test_static_combinations(self):
         self.verify([])
@@ -80,6 +88,51 @@ class SortTests(ABC):
         for _ in range(100):
             lst = [random.randint(0, 25) for _ in range(100)]
             self.verify(lst)
+
+
+class BubbleSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = bubble_sort
+
+
+class ShakerSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = shaker_sort
+
+
+class EvenOddSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = even_odd_sort
+
+
+class CombSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = comb_sort
+
+
+class MergeSortRecursiveTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = merge_sort_recursive
+
+
+class MergeSortIterativeTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = merge_sort_iterative
+
+
+class InsertionSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = insertion_sort
+
+
+class InsertionSortWithBufferTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = insertion_sort_with_buffer
+
+
+class PairInsertionSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = pair_insertion_sort
 
 
 class RandomQuickSortTests(SortTests, unittest.TestCase):
