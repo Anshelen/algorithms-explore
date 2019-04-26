@@ -81,7 +81,6 @@ def optimized_introsort(lst, l=0, r=None):
         q.append((k2, r, depth + 1))
 
     if out_of_depth:
-        print("merge opt for list ", lst)
         sorted_lst = merge_sort_iterative(lst)
         lst.clear()
         lst.extend(sorted_lst)
