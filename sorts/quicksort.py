@@ -136,5 +136,5 @@ def quick_sort_3_way_partition(lst, l=0, r=None):
     if len(lst) <= 1 or l >= r:
         return
     k1, k2 = _3_way_partition(lst, l, r)
-    quick_sort_random(lst, l, k1 - 1)
-    quick_sort_random(lst, k2, r)
+    quick_sort_3_way_partition(lst, l, k1 - 1)
+    quick_sort_3_way_partition(lst, k2, r)
