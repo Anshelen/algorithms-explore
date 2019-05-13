@@ -8,6 +8,7 @@ from abc import ABC
 
 from sorts.bubblebasedsorts import bubble_sort, comb_sort, even_odd_sort, \
     shaker_sort
+from sorts.heapsort import heapsort
 from sorts.insertionsort import insertion_sort, insertion_sort_with_buffer, \
     pair_insertion_sort
 from sorts.introsort import optimized_introsort, introsort
@@ -163,6 +164,11 @@ class IntrosortTests(SortTests, unittest.TestCase):
 class OptimizedIntrosortTests(SortTests, unittest.TestCase):
     def setUp(self):
         self.func = optimized_introsort
+
+
+class HeapSortTests(SortTests, unittest.TestCase):
+    def setUp(self):
+        self.func = heapsort
 
 
 if __name__ == '__main__':
