@@ -10,11 +10,11 @@ from sorts.bubblebasedsorts import bubble_sort, comb_sort, even_odd_sort, \
     shaker_sort
 from sorts.insertionsort import insertion_sort, insertion_sort_with_buffer, \
     pair_insertion_sort
-from sorts.introsort import optimized_introsort, _median_sep_index, introsort
+from sorts.introsort import optimized_introsort, introsort
 from sorts.mergesort import merge_sort_recursive, merge_sort_iterative
-from sorts.quicksort import _partition, _3_way_partition, quick_sort_random, \
-    quick_sort_no_tail_recursion, quick_sort_3_way_partition, \
-    quick_sort_no_recursion
+from sorts.partitions import partition, three_way_partition, median_sep_index
+from sorts.quicksort import quick_sort_random, quick_sort_no_tail_recursion, \
+    quick_sort_3_way_partition, quick_sort_no_recursion
 
 
 class PartitionTests(unittest.TestCase):
@@ -29,7 +29,7 @@ class PartitionTests(unittest.TestCase):
     def test_partition(self):
         for _ in range(100):
             lst = [random.randint(0, 40) for _ in range(100)]
-            pos = _partition(lst, 0, len(lst) - 1)
+            pos = partition(lst, 0, len(lst) - 1)
             self.verify_list(lst, pos)
 
 
@@ -47,18 +47,18 @@ class Partition3WaysTests(unittest.TestCase):
     def test_partition(self):
         for _ in range(100):
             lst = [random.randint(0, 40) for _ in range(100)]
-            k1, k2 = _3_way_partition(lst, 0, len(lst) - 1)
+            k1, k2 = three_way_partition(lst, 0, len(lst) - 1)
             self.verify_list(lst, k1, k2)
 
 
 class MedianSepIndexTests(unittest.TestCase):
 
     def test_all(self):
-        self.assertEqual(_median_sep_index([1, 2, 3], 0, 2), 1)
-        self.assertEqual(_median_sep_index([3, 2, 1], 0, 2), 1)
-        self.assertEqual(_median_sep_index([2, 3, 1], 0, 2), 0)
-        self.assertEqual(_median_sep_index([2, 2, 1], 0, 2), 0)
-        self.assertEqual(_median_sep_index([1, 2, 2], 0, 2), 1)
+        self.assertEqual(median_sep_index([1, 2, 3], 0, 2), 1)
+        self.assertEqual(median_sep_index([3, 2, 1], 0, 2), 1)
+        self.assertEqual(median_sep_index([2, 3, 1], 0, 2), 0)
+        self.assertEqual(median_sep_index([2, 2, 1], 0, 2), 0)
+        self.assertEqual(median_sep_index([1, 2, 2], 0, 2), 1)
 
 
 class SortTests(ABC):

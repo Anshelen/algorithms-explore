@@ -1,5 +1,5 @@
 """
-Интроспективная сортировка.К омбинированный рекурсивный алгоритм быстрой
+Интроспективная сортировка. К омбинированный рекурсивный алгоритм быстрой
 сортировки с выбором разделителя по медиане и сортировки слиянием. Если
 глубина рекурсии превышает c*log n, то запускается сортировка слиянием. Таким
 образом сложность алгоритма в худшем случае O(n*log n).
@@ -8,16 +8,7 @@
 import math
 
 from sorts.mergesort import merge_sort_iterative
-from sorts.quicksort import _3_way_partition, _partition
-
-
-def _median_sep_index(lst, l, r):
-    """
-    Возвращает индекс (в промежутке от l до r включительно) разделителя в
-    списке, являющимся средним элементом при сравнении первого, последнего и
-    срединного элемента.
-    """
-    return sorted([(lst[i], i) for i in [l, (l + r) // 2, r]])[1][1]
+from sorts.partitions import partition, three_way_partition, median_sep_index
 
 
 def introsort(lst, l=0, r=None):
@@ -38,7 +29,7 @@ def introsort(lst, l=0, r=None):
         if l >= r:
             return True
 
-        m = _partition(lst, l, r, index_func=_median_sep_index)
+        m = partition(lst, l, r, index_func=median_sep_index)
         res1 = _quick_sort(lst, l, m - 1, depth)
         res2 = _quick_sort(lst, m + 1, r, depth)
         if depth > max_depth:
@@ -76,7 +67,7 @@ def optimized_introsort(lst, l=0, r=None):
             break
         if l >= r:
             continue
-        k1, k2 = _3_way_partition(lst, l, r, index_func=_median_sep_index)
+        k1, k2 = three_way_partition(lst, l, r, index_func=median_sep_index)
         q.append((l, k1 - 1, depth + 1))
         q.append((k2, r, depth + 1))
 
