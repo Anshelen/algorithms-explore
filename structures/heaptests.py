@@ -51,6 +51,19 @@ class VerifyHeapTests(AbstractHeapTest):
         self.verify_heap()
 
 
+class InitHeapTests(AbstractHeapTest):
+
+    def test_empty(self):
+        self.heap = Heap(lst=[])
+        self.verify_heap()
+
+    def test_dynamic(self):
+        for i in range(100):
+            lst = [random.randint(0, 100) for _ in range(50)]
+            self.heap = Heap(lst=lst)
+            self.verify_heap()
+
+
 class ShiftUpTests(AbstractHeapTest):
 
     def test_no_need_to_shift_up_first_element(self):
@@ -117,7 +130,7 @@ class ShiftDownTests(AbstractHeapTest):
         self.assertHeapState([1, 2, 3, 7, 5, 3])
 
     def test_shift_down_with_priority_function(self):
-        self.heap = Heap(lambda x: x[1])
+        self.heap = Heap(prior_func=lambda x: x[1])
         self.setHeapState([('d', 1), ('c', 2), ('b', 3), ('a', 4)])
         self.heap._shift_down(1)
         self.assertHeapState([('d', 1), ('c', 2), ('b', 3), ('a', 4)])
@@ -151,7 +164,7 @@ class InsertTests(AbstractHeapTest):
             self.verify_heap()
 
     def test_insert_with_random_and_priority_function(self):
-        self.heap = Heap(lambda x: x[1])
+        self.heap = Heap(prior_func=lambda x: x[1])
         for i in range(100):
             self.heap.insert(('a', random.randint(0, 100)))
             self.verify_heap()
@@ -182,7 +195,7 @@ class ExtendTests(AbstractHeapTest):
             self.verify_heap()
 
     def test_with_random_and_priority_function(self):
-        self.heap = Heap(lambda x: x[1])
+        self.heap = Heap(prior_func=lambda x: x[1])
         for i in range(100):
                 size = random.randint(0, 10)
                 lst = [('a', random.randint(0, 100)) for _ in range(size)]
@@ -207,12 +220,12 @@ class IndexTests(AbstractHeapTest):
             self.heap._index(4)
 
     def test_common_with_priority_function(self):
-        self.heap = Heap(lambda x: x[1])
+        self.heap = Heap(prior_func=lambda x: x[1])
         self.setHeapState([('a', 1), ('b', 2), ('c', 3)])
         self.assertEqual(1, self.heap._index(('b', 2)))
 
     def test_common_with_priority_function_and_not_contained(self):
-        self.heap = Heap(lambda x: x[1])
+        self.heap = Heap(prior_func=lambda x: x[1])
         self.setHeapState([('a', 1), ('b', 2), ('c', 3)])
         with self.assertRaises(ValueError):
             self.heap._index(('a', 2))

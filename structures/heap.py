@@ -12,14 +12,23 @@ class Heap:
     3. Последний слой заполняется слева направо без «дырок».
 
     Скорость работы основных операций - вставки и извлечения минимума O(log n).
+    Скорость создания массива - О(n).
     """
 
-    def __init__(self, prior_func=lambda x: x):
+    def __init__(self, lst=None, prior_func=lambda x: x):
         """
-        :param prior_func: функция, позволяющая получить приоритет из элемента
+        :param lst: начальный массив, который будет преобразован в кучу за
+            линейное время
+        :param prior_func: функция, позволяющая получить приоритет из элемента.
+            Дефолтно приоритет равен самому элементу
         """
-        self.lst = []
         self.prior_func = prior_func
+        if lst:
+            self.lst = lst
+            for i in range(len(self.lst) // 2 - 1, -1, -1):
+                self._shift_down(i)
+        else:
+            self.lst = []
 
     def insert(self, el):
         """
