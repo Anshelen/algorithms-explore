@@ -13,7 +13,7 @@ def count_recursive(a: Sequence, b: Sequence):
     if not a and not b:
         return 0
 
-    d = [[-1 for _ in range(len(b) + 1)] for _ in range(len(a) + 1)]
+    d = [[-1] * (len(b) + 1) for _ in range(len(a) + 1)]
 
     def _count(i, j):
         if i == 0:
@@ -23,7 +23,7 @@ def count_recursive(a: Sequence, b: Sequence):
         elif d[i][j] == -1:
             _ins = _count(i, j - 1) + 1
             _del = _count(i - 1, j) + 1
-            _change = _count(i - 1, j - 1) + (0 if a[i - 1] == b[j - 1] else 1)
+            _change = _count(i - 1, j - 1) + (a[i - 1] != b[j - 1])
             d[i][j] = min(_ins, _del, _change)
         return d[i][j]
 
@@ -37,8 +37,7 @@ def count_iterative(a: Sequence, b: Sequence):
     """
     if not a and not b:
         return 0
-
-    d = [[-1 for _ in range(len(b) + 1)] for _ in range(len(a) + 1)]
+    d = [[-1] * (len(b) + 1) for _ in range(len(a) + 1)]
 
     for i in range(len(a) + 1):
         d[i][0] = i
@@ -47,7 +46,7 @@ def count_iterative(a: Sequence, b: Sequence):
     for i in range(1, len(a) + 1):
         for j in range(1, len(b) + 1):
             d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1,
-                          d[i - 1][j - 1] + (0 if a[i - 1] == b[j - 1] else 1))
+                          d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
     return d[len(a)][len(b)]
 
 
@@ -64,17 +63,15 @@ def count_optimized(a: Sequence, b: Sequence):
     if len(a) < len(b):
         a, b = b, a
 
-    prev = [-1 for _ in range(len(b) + 1)]
-    curr = [-1 for _ in range(len(b) + 1)]
+    prev = list(range(len(b) + 1))
 
-    for j in range(len(b) + 1):
-        prev[j] = j
-    for i in range(1, len(a) + 1):
-        curr[0] = i
-        for j in range(1, len(b) + 1):
-            curr[j] = min(prev[j] + 1, curr[j - 1] + 1,
-                          prev[j - 1] + (0 if a[i - 1] == b[j - 1] else 1))
-        prev = curr[:]
+    for i, ch1 in enumerate(a, 1):
+        curr = [i] + [-1] * len(b)
+        for j, ch2 in enumerate(b, 1):
+            curr[j] = min(prev[j] + 1,
+                          curr[j - 1] + 1,
+                          prev[j - 1] + (ch1 != ch2))
+        prev = curr
     return prev[len(b)]
 
 
@@ -88,7 +85,7 @@ def print_diff(a: Sequence, b: Sequence):
     if not a and not b:
         return ''
 
-    d = [[-1 for _ in range(len(b) + 1)] for _ in range(len(a) + 1)]
+    d = [[-1] * (len(b) + 1) for _ in range(len(a) + 1)]
 
     for i in range(len(a) + 1):
         d[i][0] = i
@@ -97,12 +94,12 @@ def print_diff(a: Sequence, b: Sequence):
     for i in range(1, len(a) + 1):
         for j in range(1, len(b) + 1):
             d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1,
-                          d[i - 1][j - 1] + (0 if a[i - 1] == b[j - 1] else 1))
+                          d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
     distance = d[len(a)][len(b)]
 
     _a, _b, diff, i, j = '', '', '', len(a), len(b)
     while i > 0 or j > 0:
-        if d[i][j] == d[i - 1][j - 1] + (0 if a[i - 1] == b[j - 1] else 1):
+        if d[i][j] == d[i - 1][j - 1] + (a[i - 1] != b[j - 1]):
             _a += a[i - 1]
             _b += b[j - 1]
             diff += ' ' if a[i - 1] == b[j - 1] else '^'
