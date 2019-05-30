@@ -21,7 +21,7 @@ class Stack:
             raise RuntimeError('Stack is empty')
         return self._head.value
 
-    def get(self):
+    def pop(self):
         if self.empty():
             raise RuntimeError('Stack is empty')
         res = self._head.value
@@ -29,7 +29,7 @@ class Stack:
         self._size -= 1
         return res
 
-    def put(self, item):
+    def push(self, item):
         new_node = _Node(item, self._head if not self.empty() else None)
         self._head = new_node
         self._size += 1
@@ -53,33 +53,33 @@ class StackTest(unittest.TestCase):
         self.assertTrue(self.stack.empty())
 
     def test_not_empty(self):
-        self.stack.put(1)
+        self.stack.push(1)
         self.assertFalse(self.stack.empty())
 
     def test_push_first(self):
-        self.stack.put(1)
-        self.assertEqual(self.stack.get(), 1)
+        self.stack.push(1)
+        self.assertEqual(self.stack.pop(), 1)
 
     def test_pop_empty(self):
         with self.assertRaises(RuntimeError):
-            self.stack.get()
+            self.stack.pop()
 
     def test_push_and_pop(self):
-        self.stack.put(1)
-        self.stack.put(2)
-        self.assertEqual(self.stack.get(), 2)
-        self.stack.put(3)
-        self.assertEqual(self.stack.get(), 3)
-        self.assertEqual(self.stack.get(), 1)
-        self.stack.put(4)
-        self.assertEqual(self.stack.get(), 4)
+        self.stack.push(1)
+        self.stack.push(2)
+        self.assertEqual(self.stack.pop(), 2)
+        self.stack.push(3)
+        self.assertEqual(self.stack.pop(), 3)
+        self.assertEqual(self.stack.pop(), 1)
+        self.stack.push(4)
+        self.assertEqual(self.stack.pop(), 4)
 
     def test_peek_empty(self):
         with self.assertRaises(RuntimeError):
             self.stack.peek()
 
     def test_peek_not_empty(self):
-        self.stack.put(1)
+        self.stack.push(1)
         self.assertEqual(self.stack.peek(), 1)
         self.assertEqual(len(self.stack), 1)
 
@@ -87,11 +87,11 @@ class StackTest(unittest.TestCase):
         self.assertFalse(self.stack)
 
     def test_bool_not_empty(self):
-        self.stack.put(0)
+        self.stack.push(0)
         self.assertTrue(self.stack)
 
     def test_len(self):
-        self.stack.put(0)
+        self.stack.push(0)
         self.assertEqual(len(self.stack), 1)
 
 

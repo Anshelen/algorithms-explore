@@ -43,15 +43,15 @@ def find_iterative(lst: List[int]) -> int:
     root_value, root_depth = lst.index(-1), 1
     max_depth = 1
     tasks = Stack()
-    tasks.put((root_value, root_depth))
+    tasks.push((root_value, root_depth))
     while tasks:
-        v = tasks.get()
+        v = tasks.pop()
         value, depth = v[0], v[1]
         if max_depth < depth:
             max_depth = depth
         for i in range(len(lst)):
             if lst[i] == value:
-                tasks.put((i, depth + 1))
+                tasks.push((i, depth + 1))
     return max_depth
 
 
@@ -65,14 +65,14 @@ def find_iterative_building_tree(lst: List[int]) -> int:
 
     max_level = 1
     tasks = Stack()
-    tasks.put(root)
+    tasks.push(root)
     while tasks:
-        node = tasks.get()
+        node = tasks.pop()
         if max_level < node.level:
             max_level = node.level
         for child in node.children:
             child.level = node.level + 1
-            tasks.put(child)
+            tasks.push(child)
     return max_level
 
 

@@ -16,12 +16,12 @@ def resolve(s: str):
         if ch in open_brackets:
             if stack.empty():
                 first_open_pos = i
-            stack.put(ch)
+            stack.push(ch)
         else:
             if stack.empty():
                 return i
             else:
-                opened = stack.get()
+                opened = stack.pop()
                 if open_brackets.index(opened) != close_brackets.index(ch):
                     return i
     if stack.empty():
