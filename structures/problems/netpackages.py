@@ -29,7 +29,7 @@
 
 from typing import Tuple, Sequence, List
 
-from structures.queue import Queue
+from structures.std_queue import Queue
 
 # Сетевой пакет. Задается двумя числами (a, b), где a - время поступления
 # пакета, b - длительность обработки пакета
