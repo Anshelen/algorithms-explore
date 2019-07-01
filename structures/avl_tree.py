@@ -11,16 +11,16 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-class Node(Generic[K, V]):
+class _Node(Generic[K, V]):
     """
     Узел дерева.
     """
 
     key: K
     value: V
-    right: Optional["Node"]
-    left: Optional["Node"]
-    parent: Optional["Node"]
+    right: Optional["_Node"]
+    left: Optional["_Node"]
+    parent: Optional["_Node"]
     height: int
     size: int
 
@@ -32,15 +32,6 @@ class Node(Generic[K, V]):
         self.parent = None
         self.height = 1
         self.size = 1
-
-    def unbind_parent(self) -> None:
-        """ Отсоединение узла от родителя. """
-        if self.parent is None:
-            return
-        if self.parent.left == self:
-            self.parent.left = None
-        else:
-            self.parent.right = None
 
     def is_root(self) -> bool:
         """ Является ли узел корневым. """
@@ -72,87 +63,90 @@ class Node(Generic[K, V]):
             return False
         return self.parent.right == self
 
-    def hang_left(self, node: Optional["Node"]) -> None:
+    def hang_left(self, node: Optional["_Node"]) -> None:
         """ Подвесить переданный узел node к текущему узлу слева.
         Или отсоединить левый узел-потомок, если передать None. """
         self.left = node
         if node:
             node.parent = self
 
-    def hang_right(self, node: Optional["Node"]) -> None:
+    def hang_right(self, node: Optional["_Node"]) -> None:
         """ Подвесить переданный узел node к текущему узлу справа.
         Или отсоединить правый узел-потомок, если передать None. """
         self.right = node
         if node:
             node.parent = self
 
+    def update_invariants(self) -> None:
+        """ Обновить параметры узла."""
+        self.update_height()
+        self.update_size()
 
-def _split_left(node: Node) -> Tuple[Optional['Node'], Optional['Node']]:
-    """
-    Отсекает левого потомка, если он есть. По сути обособляет левое
-    поддерево. Возвращает кортеж из двух узлов - левого потомка и
-    переданного узла. В случае отсутствия потомка вернет None.
-    """
-    child = node.left
-    if child:
-        child.parent = None
-    node.left = None
-    _update_invariants(node)
-    return child, node
+    def update_height(self) -> None:
+        """ Обновить параметр высоты узла. """
+        l_height = self.left.height if self.left else 0
+        r_height = self.right.height if self.right else 0
+        self.height = max(l_height, r_height) + 1
+
+    def update_size(self) -> None:
+        """ Обновить количество элементов в узле. """
+        l_size = self.left.size if self.left else 0
+        r_size = self.right.size if self.right else 0
+        self.size = l_size + r_size + 1
+
+    def unbind_parent(self) -> None:
+        """ Отсоединение узла от родителя. """
+        if self.parent is None:
+            return
+        if self.parent.left == self:
+            self.parent.left = None
+        else:
+            self.parent.right = None
+        self.parent = None
+
+    def unbind_left(self) -> Optional['_Node']:
+        """
+        Отсекает левого потомка, если он есть. По сути обособляет левое
+        поддерево. Возвращает левого потомка или в случае его отсутствия -
+        None.
+        """
+        child = self.left
+        if child:
+            child.unbind_parent()
+            self.update_invariants()
+        return child
+
+    def unbind_right(self) -> Optional['_Node']:
+        """
+        Отсекает правого потомка, если он есть. По сути обособляет правое
+        поддерево. Возвращает правого потомка или в случае его отсутствия -
+        None.
+        """
+        child = self.right
+        if child:
+            child.unbind_parent()
+            self.update_invariants()
+        return child
+
+    def max_in_subtree(self) -> '_Node':
+        """ Находит узел с максимальном ключом в поддереве. """
+        root = self
+        while root.right is not None:
+            root = root.right
+        return root
+
+    def min_in_subtree(self) -> '_Node':
+        """ Находит узел с минимальным ключом в поддереве. """
+        root = self
+        while root.left is not None:
+            root = root.left
+        return root
 
 
-def _split_right(node: Node) -> Tuple[Optional['Node'], Optional['Node']]:
-    """
-    Отсекает правого потомка, если он есть. По сути обособляет правое
-    поддерево. Возвращает кортеж из двух узлов - переданного узла и правого
-    потомка. В случае отсутствия потомка вернет None.
-    """
-    child = node.right
-    if child:
-        child.parent = None
-    node.right = None
-    _update_invariants(node)
-    return node, child
-
-
-def _update_invariants(node: Node) -> None:
-    """ Обновить параметры узла: высоту поддерева и его количество элементов."""
-    _update_height(node)
-    _update_size(node)
-
-
-def _update_height(node: Node) -> None:
-    """ Обновить параметр высоты узла. """
-    l_height = node.left.height if node.left else 0
-    r_height = node.right.height if node.right else 0
-    node.height = max(l_height, r_height) + 1
-
-
-def _update_size(node: Node) -> None:
-    """ Обновить количество элементов в поддереве. """
-    l_size = node.left.size if node.left else 0
-    r_size = node.right.size if node.right else 0
-    node.size = l_size + r_size + 1
-
-
-def _swap(node1: Node, node2: Node) -> None:
+def _swap(node1: _Node, node2: _Node) -> None:
     """ Обменять данные двух узлов (т.е. меняет ключи и значения узлов). """
     node1.key, node1.value, node2.key, node2.value \
         = node2.key, node2.value, node1.key, node1.value
-
-
-def _max_in_subtree(root: Node) -> Node:
-    """ Находит узел с максимальном ключом в поддереве с переданным корнем. """
-    while root.right is not None:
-        root = root.right
-    return root
-
-
-def _min_in_subtree(root: Node) -> Node:
-    """ Находит узел с минимальным ключом в поддереве с переданным корнем. """
-    while root.left is not None:
-        root = root.left
-    return root
 
 
 class TreeMap(Generic[K, V]):
@@ -161,10 +155,15 @@ class TreeMap(Generic[K, V]):
     АВЛ-дерева). Сложность всех операций O(log n).
     """
 
-    root: Optional[Node]
+    root: Optional[_Node]
 
-    def __init__(self) -> None:
-        self.root = None
+    def __init__(self, root_node: _Node = None) -> None:
+        """
+        Создать дерево.
+
+        :param root_node: корневой узел (для внутреннего использования)
+        """
+        self.root = root_node
 
     def __setitem__(self, key: K, value: V) -> None:
         """
@@ -172,14 +171,14 @@ class TreeMap(Generic[K, V]):
         такой ключ уже существует, то значение этого узла будет перезаписано.
         """
         if self.root is None:
-            self.root = Node(key, value)
+            self.root = self._new_node(key, value)
 
         def __inner(curr):
             if curr.key == key:
                 curr.value = value
             elif curr.key > key:
                 if curr.left is None:
-                    new_node = Node(key, value)
+                    new_node = self._new_node(key, value)
                     new_node.parent = curr
                     curr.left = new_node
                     self._repair(new_node)
@@ -187,7 +186,7 @@ class TreeMap(Generic[K, V]):
                     __inner(curr.left)
             else:
                 if curr.right is None:
-                    new_node = Node(key, value)
+                    new_node = self._new_node(key, value)
                     new_node.parent = curr
                     curr.right = new_node
                     self._repair(new_node)
@@ -214,11 +213,12 @@ class TreeMap(Generic[K, V]):
                 if node.is_root():
                     self.root = None
                 else:
+                    parent = node.parent
                     node.unbind_parent()
-                    self._repair(node)
+                    self._repair(parent)
             elif node.has_two_children():
                 # Ищем максимальный элемент в левом поддереве
-                el = _max_in_subtree(node.left)
+                el = node.left.max_in_subtree()
                 _swap(node, el)
                 __delete_node(el)
                 self._repair(el)
@@ -244,23 +244,30 @@ class TreeMap(Generic[K, V]):
     def __bool__(self):
         return self.__len__() > 0
 
+    def __contains__(self, item):
+        try:
+            self.__find_node(item)
+            return True
+        except KeyError:
+            return False
+
     def max_key_value(self) -> V:
         """ Найти значение в дереве, соответствующее наибольшему ключу. """
-        if self.root is None:
+        if not self:
             raise RuntimeError('Tree is empty')
-        return _max_in_subtree(self.root).value
+        return self.root.max_in_subtree().value
 
     def min_key_value(self) -> V:
         """ Найти значение в дереве, соответствующее наименьшему ключу. """
-        if self.root is None:
+        if not self:
             raise RuntimeError('Tree is empty')
-        return _min_in_subtree(self.root).value
+        return self.root.min_in_subtree().value
 
     def next_key_value(self, key: K) -> V:
         """ Найти значение для ключа, следующего за переданным. """
         node = self.__find_node(key)
         if node.right is not None:
-            return _min_in_subtree(node.right).value
+            return node.right.min_in_subtree().value
         else:
             while node.is_right_child():
                 node = node.parent
@@ -270,7 +277,7 @@ class TreeMap(Generic[K, V]):
         """ Найти значение для ключа, предыдущего за переданным. """
         node = self.__find_node(key)
         if node.left is not None:
-            return _max_in_subtree(node.left).value
+            return node.left.max_in_subtree().value
         else:
             while node.is_left_child():
                 node = node.parent
@@ -297,88 +304,80 @@ class TreeMap(Generic[K, V]):
         Возвращает два отдельных дерева. После разделения исходное дерево не
         может быть использовано. Сложность O(log n).
         """
-        def __split(node: Node):
+        def __split(node: _Node):
             if node is None:
-                return TreeMap(), TreeMap()
+                return self.__class__(), self.__class__()
+            node.unbind_parent()
             if node.is_leaf():
                 if node.key <= key:
-                    return TreeMap.__from(node), TreeMap()
+                    return self.__class__(node), self.__class__()
                 else:
-                    return TreeMap(), TreeMap.__from(node)
+                    return self.__class__(), self.__class__(node)
             else:
                 if node.key == key:
-                    left, right = _split_right(node)
-                    return TreeMap.__from(left), TreeMap.__from(right)
+                    right = node.unbind_right()
+                    return self.__class__(node), self.__class__(right)
                 elif node.key > key:
-                    left, right = _split_left(node)
+                    left = node.unbind_left()
                     l1, l2 = __split(left)
-                    return l1, TreeMap.merge(l2, TreeMap.__from(right))
+                    l2.merge(self.__class__(node))
+                    return l1, l2
                 else:
-                    left, right = _split_right(node)
+                    right = node.unbind_right()
                     r1, r2 = __split(right)
-                    return TreeMap.merge(TreeMap.__from(left), r1), r2
+                    left = self.__class__(node)
+                    left.merge(r1)
+                    return left, r2
         if not self.root:
-            return TreeMap(), TreeMap()
+            return self.__class__(), self.__class__()
         return __split(self.root)
 
-    @staticmethod
-    def merge(a: 'TreeMap', b: 'TreeMap') -> 'TreeMap':
+    def merge(self, a: 'TreeMap') -> None:
         """
-        Сливает два дерева и возвращает новое дерево. Все элементы дерева a
-        должны быть меньше, чем в дереве b. После слияния первоначальные
-        деревья не должны быть использованы.
+        Вливает дерево a в текущее дерево. Все элементы текущего дерева
+        должны быть меньше, чем в дереве a. После слияния узлы сливаемого дерева
+        становятся частью текущего дерева, поэтому дерево a не должно быть
+        использовано впоследствии.
         Сложность алгоритма O(height(a) - height(b) + 1).
         """
+        if not self:
+            self.root = a.root
+            return
         if not a:
-            return b
-        if not b:
-            return a
+            return
 
         # Элемент-разделитель
-        mid = _max_in_subtree(a.root)
-        del a[mid.key]
-        if not a:
-            b[mid.key] = mid.value
-            return b
-        res = TreeMap()
-        if a.root.height <= b.root.height + 1:
-            mid.hang_right(b.root)
-            mid.hang_left(a.root)
+        mid = self.root.max_in_subtree()
+        del self[mid.key]
+        if not self:
+            a[mid.key] = mid.value
+            self.root = a.root
+            return
+        if self.root.height <= a.root.height + 1:
+            mid.hang_right(a.root)
+            mid.hang_left(self.root)
             mid.parent = None
-            res.root = mid
-        elif a.root.height > b.root.height:
-            node = a.root
-            while node.height > b.root.height + 1:
+            self.root = mid
+        elif self.root.height > a.root.height:
+            node = self.root
+            while node.height > a.root.height + 1:
                 node = node.right
             r = node.right
             node.hang_right(mid)
-            mid.hang_right(b.root)
+            mid.hang_right(a.root)
             mid.hang_left(r)
-            res.root = a.root
         else:
-            node = b.root
-            while node.height > b.root.height + 1:
+            node = a.root
+            while node.height > a.root.height + 1:
                 node = node.left
             r = node.left
             node.hang_left(mid)
-            mid.hang_left(b.root)
+            mid.hang_left(a.root)
             mid.hang_right(r)
-            res.root = b.root
-        res._repair(mid)
-        return res
+            self.root = a.root
+        self._repair(mid)
 
-    @staticmethod
-    def __from(node: Optional[Node]):
-        """ Создает дерево из узла. При этом отсекает его от родителя. Если
-        вместо узла передан None, то создаст пустое дерево. """
-        res = TreeMap()
-        if node:
-            node.unbind_parent()
-            node.parent = None
-        res.root = node
-        return res
-
-    def __find_node(self, key: K) -> Node:
+    def __find_node(self, key: K) -> _Node:
         """ Находит узел дерева с переданным ключом, либо возбуждает KeyError в
         случае отсутствия узла с таким ключом. """
 
@@ -398,10 +397,15 @@ class TreeMap(Generic[K, V]):
             raise KeyError(f'No node with key: {key}')
         return __inner(self.root)
 
-    def _repair(self, node: Node) -> None:
+    @staticmethod
+    def _new_node(key: K, value: V) -> _Node:
+        """ Создает новый узел. """
+        return _Node(key, value)
+
+    def _repair(self, node: _Node) -> None:
         """ Восстановляет свойства дерева (его сбалансированность), начиная
         с переданного узла и рекурсивно до корня. """
-        _update_invariants(node)
+        node.update_invariants()
         r_height = node.right.height if node.right else 0
         l_height = node.left.height if node.left else 0
         if abs(r_height - l_height) == 2:
@@ -426,7 +430,7 @@ class TreeMap(Generic[K, V]):
         if node.parent:
             self._repair(node.parent)
 
-    def __small_right_spin(self, node: Node) -> None:
+    def __small_right_spin(self, node: _Node) -> None:
         """ Осуществляет малое правое вращение в переданном узле.
 
               a                           b
@@ -451,10 +455,10 @@ class TreeMap(Generic[K, V]):
         a.hang_left(a_sub)
         a.hang_right(b_sub)
         b.hang_right(c_sub)
-        _update_invariants(a)
-        _update_invariants(b)
+        a.update_invariants()
+        b.update_invariants()
 
-    def __small_left_spin(self, node: Node) -> None:
+    def __small_left_spin(self, node: _Node) -> None:
         """ Осуществляет малое левое вращение в переданном узле.
 
                   a                          b
@@ -479,10 +483,10 @@ class TreeMap(Generic[K, V]):
         b.hang_left(a_sub)
         a.hang_left(b_sub)
         a.hang_right(c_sub)
-        _update_invariants(a)
-        _update_invariants(b)
+        a.update_invariants()
+        b.update_invariants()
 
-    def __big_right_spin(self, node: Node) -> None:
+    def __big_right_spin(self, node: _Node) -> None:
         """ Осуществляет большое правое вращение в переданном узле.
 
               a                               c
@@ -513,11 +517,11 @@ class TreeMap(Generic[K, V]):
         a.hang_right(b_sub)
         b.hang_left(c_sub)
         b.hang_right(d_sub)
-        _update_invariants(a)
-        _update_invariants(b)
-        _update_invariants(c)
+        a.update_invariants()
+        b.update_invariants()
+        c.update_invariants()
 
-    def __big_left_spin(self, node: Node) -> None:
+    def __big_left_spin(self, node: _Node) -> None:
         """ Осуществляет большое левое вращение в переданном узле.
 
                   a                             c
@@ -548,6 +552,6 @@ class TreeMap(Generic[K, V]):
         b.hang_right(b_sub)
         a.hang_left(c_sub)
         a.hang_right(d_sub)
-        _update_invariants(a)
-        _update_invariants(b)
-        _update_invariants(c)
+        a.update_invariants()
+        b.update_invariants()
+        c.update_invariants()

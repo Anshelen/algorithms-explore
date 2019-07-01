@@ -232,27 +232,31 @@ class FindNextPrevKeyValueTests(TreeMapTests, unittest.TestCase):
         self.assertIsNone(self.map.prev_key_value(keys[0]))
 
 
-class LenAndBoolTests(TreeMapTests, unittest.TestCase):
+class LenAndBoolAndContainTests(TreeMapTests, unittest.TestCase):
 
     def test_empty(self):
         self.assertEqual(len(self.map), 0)
         self.assertFalse(self.map)
+        self.assertFalse(0 in self.map)
 
     def test_after_put(self):
         self.map[1] = 1
         self.assertEqual(len(self.map), 1)
         self.assertTrue(self.map)
+        self.assertTrue(1 in self.map)
 
     def test_after_put_same_key_elements(self):
         self.fill([1, (1, 3)])
         self.assertEqual(len(self.map), 1)
         self.assertTrue(self.map)
+        self.assertTrue(1 in self.map)
 
     def test_after_deleting(self):
         self.map[1] = 1
         del self.map[1]
         self.assertEqual(len(self.map), 0)
         self.assertFalse(self.map)
+        self.assertFalse(1 in self.map)
 
 
 class GetByIndexTests(TreeMapTests, unittest.TestCase):
@@ -293,63 +297,54 @@ class GetByIndexTests(TreeMapTests, unittest.TestCase):
 
 class MergeTests(TreeMapTests, unittest.TestCase):
 
+    def assertContains(self, arr):
+        s_arr = sorted(arr)
+        self.assertEqual(len(self.map), len(arr))
+        for i in range(len(arr)):
+            self.assertEqual(self.map.get_by_index(i), s_arr[i])
+
     def setUp(self):
         self.map = TreeMap()
         self.map2 = TreeMap()
 
-    def test_empty(self):
-        self.fill([1, 2])
-        self.assertEqual(TreeMap.merge(self.map, self.map2), self.map)
-        self.setUp()
-        self.fill([1, 2], tree=self.map2)
-        self.assertEqual(TreeMap.merge(self.map, self.map2), self.map2)
-        self.setUp()
-        self.assertEqual(len(TreeMap.merge(self.map, self.map2)), 0)
+    def launch_test(self, arr1, arr2):
+        self.fill(arr1)
+        self.fill(arr2, tree=self.map2)
+        self.map.merge(self.map2)
+        self.assertContains(arr1 + arr2)
+        self.validate_tree()
+
+    def test_empty_first(self):
+        self.launch_test([1, 2], [])
+
+    def test_empty_second(self):
+        self.launch_test([], [1, 2])
+
+    def test_empty_both(self):
+        self.launch_test([], [])
 
     def test_equal_height(self):
-        self.fill([1, 2, 0, 4, 3])
-        self.fill([5, 7, 8, 6, 4], tree=self.map2)
-        res = TreeMap.merge(self.map, self.map2)
-        self.validate_tree(res)
-        self.assertEqual(len(res), 10)
+        self.launch_test([1, 2, 0, 4, 3], [5, 7, 8, 6, 4])
 
     def test_first_height_more(self):
-        self.fill([1, 2, 0, 4, 3])
-        self.fill([5, 6], tree=self.map2)
-        res = TreeMap.merge(self.map, self.map2)
-        self.validate_tree(res)
-        self.assertEqual(len(res), 7)
+        self.launch_test([1, 2, 0, 4, 3], [5, 6])
 
     def test_second_height_more(self):
-        self.fill([1, 2, 0])
-        self.fill([3, 5, 7, 8, 6, 4], tree=self.map2)
-        res = TreeMap.merge(self.map, self.map2)
-        self.validate_tree(res)
-        self.assertEqual(len(res), 9)
+        self.launch_test([1, 2, 0], [3, 5, 7, 8, 6, 4])
 
     def test_one_element_in_first_tree(self):
-        self.fill([1])
-        self.fill([2, 3, 5], tree=self.map2)
-        res = TreeMap.merge(self.map, self.map2)
-        self.validate_tree(res)
-        self.assertEqual(len(res), 4)
+        self.launch_test([1], [2, 3, 5])
 
     def test_one_element_in_second_tree(self):
-        self.fill([1, 2])
-        self.fill([5], tree=self.map2)
-        res = TreeMap.merge(self.map, self.map2)
-        self.validate_tree(res)
-        self.assertEqual(len(res), 3)
+        self.launch_test([1, 2], [5])
 
     def test_dynamic(self):
         for _ in range(50):
             self.setUp()
             map_size, map2_size = random.randint(1, 50), random.randint(1, 50)
-            self.fill([i for i in range(map_size)])
-            self.fill([i + 50 for i in range(map2_size)], tree=self.map2)
-            res = TreeMap.merge(self.map, self.map2)
-            self.validate_tree(res)
-            self.assertEqual(len(res), map_size + map2_size)
+            arr1 = [i for i in range(map_size)]
+            arr2 = [i + 50 for i in range(map2_size)]
+            self.launch_test(arr1, arr2)
 
 
 class SplitTests(TreeMapTests, unittest.TestCase):
