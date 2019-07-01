@@ -4,7 +4,7 @@
 основные операции выполняются за логарифмическое время.
 """
 
-from typing import Optional, TypeVar, Generic, Tuple
+from typing import Optional, TypeVar, Generic, Tuple, Sequence, Any
 
 # Ключ и значение
 K = TypeVar('K')
@@ -555,3 +555,58 @@ class TreeMap(Generic[K, V]):
         a.update_invariants()
         b.update_invariants()
         c.update_invariants()
+
+
+class TreeSet:
+    """
+    Реализация множества на основе АВЛ-дерева.
+    """
+
+    def __init__(self, m: 'TreeMap' = None, keys: Sequence[Any] = None) -> None:
+        """
+        Создать множество на основе АВЛ-дерева.
+
+        :param m: АВЛ-дерево (если не указано, то будет создано стандартное
+        дерево). Дерево должно содержать пары "ключ => ключ".
+        :param keys: массив ключей дерева
+        """
+        self.map = m
+        for key in (keys or []):
+            self.put(key)
+
+    def put(self, key: Any) -> None:
+        """ Поместить ключ в дерево. """
+        self.map[key] = key
+
+    def get(self, i: int) -> Any:
+        """ Получить i-ый ключ. """
+        return self.map.get_by_index(i)
+
+    def delete(self, key: Any) -> None:
+        """ Удалить ключ из дерева. """
+        del self.map[key]
+
+    def max(self) -> Any:
+        """ Максимальный ключ в множестве. """
+        return self.map.max_key_value()
+
+    def min(self) -> Any:
+        """ Минимальный ключ в множестве. """
+        return self.map.min_key_value()
+
+    def next(self, key: Any) -> Any:
+        """ Следующий ключ в множестве. """
+        return self.map.next_key_value(key)
+
+    def prev(self, key: Any) -> Any:
+        """ Предыдущий ключ в множестве. """
+        return self.map.prev_key_value(key)
+
+    def __len__(self):
+        return self.map.__len__()
+
+    def __bool__(self):
+        return self.map.__bool__()
+
+    def __contains__(self, item):
+        return self.map.__contains__(item)
