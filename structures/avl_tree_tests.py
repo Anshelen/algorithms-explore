@@ -43,8 +43,8 @@ class TreeMapTests(ABC):
                 right_height = node.right.height
                 right_size = node.right.size
                 __validate(node.right)
-            height = max(left_height, right_height) + 1
-            self.assertEqual(node.height, height)
+            self.assertTrue(abs(left_height - right_height) <= 1)
+            self.assertEqual(node.height, max(left_height, right_height) + 1)
             self.assertEqual(node.size, left_size + right_size + 1)
         __validate(root)
 
@@ -324,7 +324,7 @@ class MergeTests(TreeMapTests, unittest.TestCase):
         self.launch_test([], [])
 
     def test_equal_height(self):
-        self.launch_test([1, 2, 0, 4, 3], [5, 7, 8, 6, 4])
+        self.launch_test([1, 2, 0, 4, 3], [5, 7, 8, 6, 9])
 
     def test_first_height_more(self):
         self.launch_test([1, 2, 0, 4, 3], [5, 6])
@@ -337,6 +337,12 @@ class MergeTests(TreeMapTests, unittest.TestCase):
 
     def test_one_element_in_second_tree(self):
         self.launch_test([1, 2], [5])
+
+    def test_right_tree_higher(self):
+        self.launch_test([0, 1], [50, 51, 52, 53])
+
+    def test_middle_element_has_one_child(self):
+        self.launch_test([1, 0, 3, 2], [5, 6, 7])
 
     def test_dynamic(self):
         for _ in range(50):
@@ -354,6 +360,7 @@ class SplitTests(TreeMapTests, unittest.TestCase):
         a, b = self.map.split(key)
         self.validate_tree(tree=a)
         self.validate_tree(tree=b)
+        self.assertEqual(len(set(arr)), len(a) + len(b))
         for i in range(len(a)):
             self.assertLessEqual(a.get_by_index(i), key)
         for i in range(len(b)):
@@ -383,8 +390,9 @@ class SplitTests(TreeMapTests, unittest.TestCase):
     def test_dynamic(self):
         for _ in range(150):
             self.setUp()
-            self.launch_test([random.randint(0, 50) for _ in range(25)],
-                             random.randint(0, 50))
+            arr = [random.randint(0, 50) for _ in range(25)]
+            div = random.randint(0, 50)
+            self.launch_test(arr, div)
 
 
 if __name__ == '__main__':

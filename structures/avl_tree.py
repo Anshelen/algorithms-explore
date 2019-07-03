@@ -13,7 +13,7 @@ V = TypeVar('V')
 
 class _Node(Generic[K, V]):
     """
-    Узел дерева.
+    Узел дерева. Отражает поддерево.
     """
 
     key: K
@@ -142,11 +142,245 @@ class _Node(Generic[K, V]):
             root = root.left
         return root
 
+    def put(self, new_node: '_Node') -> None:
+        """
+        Помещает новый узел в поддерево. Если уже существует узел с тем же
+        ключом, то значение этого узла будет перезаписано.
+        """
+        key, value = new_node.key, new_node.value
+
+        def __inner(curr):
+            if curr.key == key:
+                curr.value = value
+            elif curr.key > key:
+                if curr.left is None:
+                    new_node.parent = curr
+                    curr.left = new_node
+                    curr.repair()
+                else:
+                    __inner(curr.left)
+            else:
+                if curr.right is None:
+                    new_node.parent = curr
+                    curr.right = new_node
+                    curr.repair()
+                else:
+                    __inner(curr.right)
+        __inner(self)
+
+    def repair(self) -> None:
+        """ Восстановляет свойства дерева (его сбалансированность), начиная
+        с текущего узла и рекурсивно до корня. """
+        self.update_invariants()
+        r_height = self.right.height if self.right else 0
+        l_height = self.left.height if self.left else 0
+        if abs(r_height - l_height) == 2:
+            r_r_height = self.right.right.height \
+                if self.right and self.right.right else 0
+            r_l_height = self.right.left.height \
+                if self.right and self.right.left else 0
+            l_l_height = self.left.left.height \
+                if self.left and self.left.left else 0
+            l_r_height = self.left.right.height \
+                if self.left and self.left.right else 0
+            if l_height < r_r_height:
+                self.__small_right_spin()
+            elif l_height < r_l_height:
+                self.__big_right_spin()
+            elif r_height < l_l_height:
+                self.__small_left_spin()
+            elif r_height < l_r_height:
+                self.__big_left_spin()
+            else:
+                raise RuntimeError('Not expected error')
+        if self.parent:
+            self.parent.repair()
+
+    def get_by_index(self, i: int) -> V:
+        """ Получить значение, соответствующее i-ому ключу в поддереве. """
+        if i > self.size - 1 or i < 0:
+            raise IndexError('tree index out of range')
+
+        def __get(node, i):
+            l_size = node.left.size if node.left else 0
+            if l_size == i:
+                return node.value
+            elif l_size > i:
+                return __get(node.left, i)
+            else:
+                return __get(node.right, i - l_size - 1)
+        return __get(self, i)
+
+    def __small_right_spin(self) -> None:
+        """ Осуществляет малое правое вращение в переданном узле.
+
+              a                           b
+            /   \                       /   \
+        a_sub     b                    a    c_sub
+                 /  \       ==>      /   \
+            b_sub    c_sub        a_sub  b_sub
+
+        a_sub < a < b_sub < b < c_sub
+        Должно применяться, если высота поддерева a_sub меньше, чем c_sub.
+        """
+        parent, a, b = self.parent, self, self.right
+        a_sub, b_sub, c_sub = self.left, self.right.left, self.right.right
+        _swap(a, b)
+        a, b = b, a
+        b.hang_left(a)
+        a.hang_left(a_sub)
+        a.hang_right(b_sub)
+        b.hang_right(c_sub)
+        a.update_invariants()
+        b.update_invariants()
+
+    def __small_left_spin(self) -> None:
+        """ Осуществляет малое левое вращение в переданном узле.
+
+                  a                          b
+                /   \                      /   \
+              b      c_sub             a_sub     a
+            /   \            ==>               /   \
+        a_sub    b_sub                      b_sub  c_sub
+
+        a_sub < b < b_sub < a < c_sub
+        Должно применяться, если высота поддерева c_sub меньше, чем a_sub.
+        """
+        parent, a, b = self.parent, self, self.left
+        a_sub, b_sub, c_sub = self.left.left, self.left.right, self.right
+        _swap(a, b)
+        a, b = b, a
+        b.hang_right(a)
+        b.hang_left(a_sub)
+        a.hang_left(b_sub)
+        a.hang_right(c_sub)
+        a.update_invariants()
+        b.update_invariants()
+
+    def __big_right_spin(self) -> None:
+        """ Осуществляет большое правое вращение в переданном узле.
+
+              a                               c
+            /   \                           /   \
+        a_sub     b                    a             b
+                 /  \          ==>   /   \         /   \
+                c    d_sub        a_sub  b_sub   c_sub  d_sub
+              /   \
+            b_sub  c_sub
+
+        a_sub < a < b_sub < c < c_sub < b < d_sub
+        Должно применяться, если высота поддерева a_sub меньше, чем высота узла
+        c.
+        """
+        parent, a, b, c = self.parent, self, self.right, self.right.left
+        a_sub, b_sub, c_sub, d_sub = self.left, self.right.left.left, \
+                                     self.right.left.right, self.right.right
+        _swap(a, c)
+        a, c = c, a
+        c.hang_left(a)
+        c.hang_right(b)
+        a.hang_left(a_sub)
+        a.hang_right(b_sub)
+        b.hang_left(c_sub)
+        b.hang_right(d_sub)
+        a.update_invariants()
+        b.update_invariants()
+        c.update_invariants()
+
+    def __big_left_spin(self) -> None:
+        """ Осуществляет большое левое вращение в переданном узле.
+
+                  a                             c
+                /   \                         /   \
+              b       d_sub              b             a
+            /   \            ==>       /   \         /   \
+        a_sub     c                a_sub  b_sub  c_sub  d_sub
+                /   \
+             b_sub  c_sub
+
+        a_sub < b < b_sub < c < c_sub < a < d_sub
+        Должно применяться, если высота поддерева d_sub меньше, чем высота узла
+        c.
+        """
+        parent, a, b, c = self.parent, self, self.left, self.left.right
+        a_sub, b_sub, c_sub, d_sub = self.left.left, self.left.right.left, \
+                                     self.left.right.right, self.right
+        _swap(a, c)
+        a, c = c, a
+        c.hang_left(b)
+        c.hang_right(a)
+        b.hang_left(a_sub)
+        b.hang_right(b_sub)
+        a.hang_left(c_sub)
+        a.hang_right(d_sub)
+        a.update_invariants()
+        b.update_invariants()
+        c.update_invariants()
+
+    def find_node(self, key: K) -> '_Node':
+        """ Находит узел дерева с переданным ключом в поддереве, либо
+        возбуждает KeyError в случае отсутствия узла с таким ключом. """
+
+        def __inner(curr):
+            if curr.key == key:
+                return curr
+            elif curr.key > key:
+                if curr.left is None:
+                    raise KeyError(f'No node with key: {key}')
+                return __inner(curr.left)
+            else:
+                if curr.right is None:
+                    raise KeyError(f'No node with key: {key}')
+                return __inner(curr.right)
+        return __inner(self)
+
+    def clear_relations(self):
+        """ Удаляет ссылки на родителя и потомков. """
+        self.parent = None
+        self.left = None
+        self.right = None
+
 
 def _swap(node1: _Node, node2: _Node) -> None:
     """ Обменять данные двух узлов (т.е. меняет ключи и значения узлов). """
     node1.key, node1.value, node2.key, node2.value \
         = node2.key, node2.value, node1.key, node1.value
+
+
+def _merge_with_root(a: Optional[_Node], b: Optional[_Node], t: _Node) -> _Node:
+    """
+    Осуществляет слияние поддеревьев с корнями a и b при среднем элементе t.
+    Причем для всех элементов справедливо a < t < b. Переменные a и b могут
+    иметь значение None. Возвращает корень объединенного дерева.
+    """
+    t.update_invariants()
+    t.clear_relations()
+    if a is None and b is None:
+        return t
+    if a is None:
+        b.put(t)
+        return b
+    if b is None:
+        a.put(t)
+        return a
+    a.unbind_parent()
+    b.unbind_parent()
+
+    if abs(a.height - b.height) <= 1:
+        t.hang_right(b)
+        t.hang_left(a)
+        t.update_invariants()
+        return t
+    elif a.height > b.height:
+        t_new = _merge_with_root(a.right, b, t)
+        a.hang_right(t_new)
+        t_new.repair()
+        return a
+    else:
+        t_new = _merge_with_root(a, b.left, t)
+        b.hang_left(t_new)
+        t_new.repair()
+        return b
 
 
 class TreeMap(Generic[K, V]):
@@ -172,35 +406,17 @@ class TreeMap(Generic[K, V]):
         """
         if self.root is None:
             self.root = self._new_node(key, value)
-
-        def __inner(curr):
-            if curr.key == key:
-                curr.value = value
-            elif curr.key > key:
-                if curr.left is None:
-                    new_node = self._new_node(key, value)
-                    new_node.parent = curr
-                    curr.left = new_node
-                    self._repair(new_node)
-                else:
-                    __inner(curr.left)
-            else:
-                if curr.right is None:
-                    new_node = self._new_node(key, value)
-                    new_node.parent = curr
-                    curr.right = new_node
-                    self._repair(new_node)
-                else:
-                    __inner(curr.right)
-
-        __inner(self.root)
+        else:
+            self.root.put(self._new_node(key, value))
 
     def __getitem__(self, item: K) -> V:
         """
         Получить значение по ключу. Если такого ключа в дереве нет, то бросает
         KeyError.
         """
-        return self.__find_node(item).value
+        if not self:
+            raise KeyError('Tree is empty')
+        return self.root.find_node(item).value
 
     def __delitem__(self, key: K) -> None:
         """
@@ -215,13 +431,13 @@ class TreeMap(Generic[K, V]):
                 else:
                     parent = node.parent
                     node.unbind_parent()
-                    self._repair(parent)
+                    parent.repair()
             elif node.has_two_children():
                 # Ищем максимальный элемент в левом поддереве
                 el = node.left.max_in_subtree()
                 _swap(node, el)
                 __delete_node(el)
-                self._repair(el)
+                el.repair()
             else:  # Один потомок
                 child = node.left if node.left else node.right
                 if node.is_root():
@@ -233,9 +449,10 @@ class TreeMap(Generic[K, V]):
                         node.parent.left = child
                     else:
                         node.parent.right = child
-                    self._repair(child)
-
-        node = self.__find_node(key)
+                    child.repair()
+        if not self:
+            raise KeyError('Tree is empty')
+        node = self.root.find_node(key)
         __delete_node(node)
 
     def __len__(self):
@@ -246,7 +463,9 @@ class TreeMap(Generic[K, V]):
 
     def __contains__(self, item):
         try:
-            self.__find_node(item)
+            if not self:
+                return False
+            self.root.find_node(item)
             return True
         except KeyError:
             return False
@@ -265,7 +484,9 @@ class TreeMap(Generic[K, V]):
 
     def next_key_value(self, key: K) -> V:
         """ Найти значение для ключа, следующего за переданным. """
-        node = self.__find_node(key)
+        if not self:
+            raise KeyError('Tree is empty')
+        node = self.root.find_node(key)
         if node.right is not None:
             return node.right.min_in_subtree().value
         else:
@@ -275,7 +496,9 @@ class TreeMap(Generic[K, V]):
 
     def prev_key_value(self, key: K) -> V:
         """ Найти значение для ключа, предыдущего за переданным. """
-        node = self.__find_node(key)
+        if not self:
+            raise KeyError('Tree is empty')
+        node = self.root.find_node(key)
         if node.left is not None:
             return node.left.max_in_subtree().value
         else:
@@ -285,18 +508,9 @@ class TreeMap(Generic[K, V]):
 
     def get_by_index(self, i: int) -> V:
         """ Получить значение, соответствующее i-ому ключу в дереве. """
-        if i > len(self) - 1 or i < 0:
+        if not self:
             raise IndexError('tree index out of range')
-
-        def __inner_get(node, i):
-            l_size = node.left.size if node.left else 0
-            if l_size == i:
-                return node.value
-            elif l_size > i:
-                return __inner_get(node.left, i)
-            else:
-                return __inner_get(node.right, i - l_size - 1)
-        return __inner_get(self.root, i)
+        return self.root.get_by_index(i)
 
     def split(self, key: K) -> Tuple['TreeMap', 'TreeMap']:
         """
@@ -306,255 +520,53 @@ class TreeMap(Generic[K, V]):
         """
         def __split(node: _Node):
             if node is None:
-                return self.__class__(), self.__class__()
+                return None, None
             node.unbind_parent()
-            if node.is_leaf():
-                if node.key <= key:
-                    return self.__class__(node), self.__class__()
-                else:
-                    return self.__class__(), self.__class__(node)
+            if node.key > key:
+                l1, l2 = __split(node.left)
+                right_child = node.right
+                if right_child:
+                    node.right.unbind_parent()
+                right = _merge_with_root(l2, right_child, node)
+                return l1, right
             else:
-                if node.key == key:
-                    right = node.unbind_right()
-                    return self.__class__(node), self.__class__(right)
-                elif node.key > key:
-                    left = node.unbind_left()
-                    l1, l2 = __split(left)
-                    l2.merge(self.__class__(node))
-                    return l1, l2
-                else:
-                    right = node.unbind_right()
-                    r1, r2 = __split(right)
-                    left = self.__class__(node)
-                    left.merge(r1)
-                    return left, r2
+                r1, r2 = __split(node.right)
+                left_child = node.left
+                if left_child:
+                    node.left.unbind_parent()
+                left = _merge_with_root(left_child, r1, node)
+                return left, r2
         if not self.root:
             return self.__class__(), self.__class__()
-        return __split(self.root)
+        a, b = __split(self.root)
+        if a:
+            a.parent = None
+        if b:
+            b.parent = None
+        return self.__class__(a), self.__class__(b)
 
-    def merge(self, a: 'TreeMap') -> None:
-        """
-        Вливает дерево a в текущее дерево. Все элементы текущего дерева
-        должны быть меньше, чем в дереве a. После слияния узлы сливаемого дерева
-        становятся частью текущего дерева, поэтому дерево a не должно быть
-        использовано впоследствии.
-        Сложность алгоритма O(height(a) - height(b) + 1).
-        """
+    def merge(self, b: 'TreeMap') -> None:
+        """ Сливает дерево b с текущим деревом. После слияния дерево b не должно
+        использоваться напрямую. """
         if not self:
-            self.root = a.root
+            self.root = b.root
             return
-        if not a:
+        if not b:
             return
 
         # Элемент-разделитель
         mid = self.root.max_in_subtree()
         del self[mid.key]
         if not self:
-            a[mid.key] = mid.value
-            self.root = a.root
+            b[mid.key] = mid.value
+            self.root = b.root
             return
-        if self.root.height <= a.root.height + 1:
-            mid.hang_right(a.root)
-            mid.hang_left(self.root)
-            mid.parent = None
-            self.root = mid
-        elif self.root.height > a.root.height:
-            node = self.root
-            while node.height > a.root.height + 1:
-                node = node.right
-            r = node.right
-            node.hang_right(mid)
-            mid.hang_right(a.root)
-            mid.hang_left(r)
-        else:
-            node = a.root
-            while node.height > a.root.height + 1:
-                node = node.left
-            r = node.left
-            node.hang_left(mid)
-            mid.hang_left(a.root)
-            mid.hang_right(r)
-            self.root = a.root
-        self._repair(mid)
+        t = _merge_with_root(self.root, b.root, mid)
+        self.root = t
 
-    def __find_node(self, key: K) -> _Node:
-        """ Находит узел дерева с переданным ключом, либо возбуждает KeyError в
-        случае отсутствия узла с таким ключом. """
-
-        def __inner(curr):
-            if curr.key == key:
-                return curr
-            elif curr.key > key:
-                if curr.left is None:
-                    raise KeyError(f'No node with key: {key}')
-                return __inner(curr.left)
-            else:
-                if curr.right is None:
-                    raise KeyError(f'No node with key: {key}')
-                return __inner(curr.right)
-
-        if not self.root:
-            raise KeyError(f'No node with key: {key}')
-        return __inner(self.root)
-
-    @staticmethod
-    def _new_node(key: K, value: V) -> _Node:
+    def _new_node(self, key: K, value: V) -> _Node:
         """ Создает новый узел. """
         return _Node(key, value)
-
-    def _repair(self, node: _Node) -> None:
-        """ Восстановляет свойства дерева (его сбалансированность), начиная
-        с переданного узла и рекурсивно до корня. """
-        node.update_invariants()
-        r_height = node.right.height if node.right else 0
-        l_height = node.left.height if node.left else 0
-        if abs(r_height - l_height) == 2:
-            r_r_height = node.right.right.height \
-                if node.right and node.right.right else 0
-            r_l_height = node.right.left.height \
-                if node.right and node.right.left else 0
-            l_l_height = node.left.left.height \
-                if node.left and node.left.left else 0
-            l_r_height = node.left.right.height \
-                if node.left and node.left.right else 0
-            if l_height < r_r_height:
-                self.__small_right_spin(node)
-            elif l_height < r_l_height:
-                self.__big_right_spin(node)
-            elif r_height < l_l_height:
-                self.__small_left_spin(node)
-            elif r_height < l_r_height:
-                self.__big_left_spin(node)
-            else:
-                raise RuntimeError('Not expected error')
-        if node.parent:
-            self._repair(node.parent)
-
-    def __small_right_spin(self, node: _Node) -> None:
-        """ Осуществляет малое правое вращение в переданном узле.
-
-              a                           b
-            /   \                       /   \
-        a_sub     b                    a    c_sub
-                 /  \       ==>      /   \
-            b_sub    c_sub        a_sub  b_sub
-
-        a_sub < a < b_sub < b < c_sub
-        Должно применяться, если высота поддерева a_sub меньше, чем c_sub.
-        """
-        parent, a, b = node.parent, node, node.right
-        a_sub, b_sub, c_sub = node.left, node.right.left, node.right.right
-        if a.is_left_child():
-            parent.hang_left(b)
-        elif a.is_right_child():
-            parent.hang_right(b)
-        else:
-            self.root = b
-            b.parent = None
-        b.hang_left(a)
-        a.hang_left(a_sub)
-        a.hang_right(b_sub)
-        b.hang_right(c_sub)
-        a.update_invariants()
-        b.update_invariants()
-
-    def __small_left_spin(self, node: _Node) -> None:
-        """ Осуществляет малое левое вращение в переданном узле.
-
-                  a                          b
-                /   \                      /   \
-              b      c_sub             a_sub     a
-            /   \            ==>               /   \
-        a_sub    b_sub                      b_sub  c_sub
-
-        a_sub < b < b_sub < a < c_sub
-        Должно применяться, если высота поддерева c_sub меньше, чем a_sub.
-        """
-        parent, a, b = node.parent, node, node.left
-        a_sub, b_sub, c_sub = node.left.left, node.left.right, node.right
-        if a.is_left_child():
-            parent.hang_left(b)
-        elif a.is_right_child():
-            parent.hang_right(b)
-        else:
-            self.root = b
-            b.parent = None
-        b.hang_right(a)
-        b.hang_left(a_sub)
-        a.hang_left(b_sub)
-        a.hang_right(c_sub)
-        a.update_invariants()
-        b.update_invariants()
-
-    def __big_right_spin(self, node: _Node) -> None:
-        """ Осуществляет большое правое вращение в переданном узле.
-
-              a                               c
-            /   \                           /   \
-        a_sub     b                    a             b
-                 /  \          ==>   /   \         /   \
-                c    d_sub        a_sub  b_sub   c_sub  d_sub
-              /   \
-            b_sub  c_sub
-
-        a_sub < a < b_sub < c < c_sub < b < d_sub
-        Должно применяться, если высота поддерева a_sub меньше, чем высота узла
-        c.
-        """
-        parent, a, b, c = node.parent, node, node.right, node.right.left
-        a_sub, b_sub, c_sub, d_sub = node.left, node.right.left.left, \
-                                     node.right.left.right, node.right.right
-        if a.is_left_child():
-            parent.hang_left(c)
-        elif a.is_right_child():
-            parent.hang_right(c)
-        else:
-            self.root = c
-            c.parent = None
-        c.hang_left(a)
-        c.hang_right(b)
-        a.hang_left(a_sub)
-        a.hang_right(b_sub)
-        b.hang_left(c_sub)
-        b.hang_right(d_sub)
-        a.update_invariants()
-        b.update_invariants()
-        c.update_invariants()
-
-    def __big_left_spin(self, node: _Node) -> None:
-        """ Осуществляет большое левое вращение в переданном узле.
-
-                  a                             c
-                /   \                         /   \
-              b       d_sub              b             a
-            /   \            ==>       /   \         /   \
-        a_sub     c                a_sub  b_sub  c_sub  d_sub
-                /   \
-             b_sub  c_sub
-
-        a_sub < b < b_sub < c < c_sub < a < d_sub
-        Должно применяться, если высота поддерева d_sub меньше, чем высота узла
-        c.
-        """
-        parent, a, b, c = node.parent, node, node.left, node.left.right
-        a_sub, b_sub, c_sub, d_sub = node.left.left, node.left.right.left, \
-                                     node.left.right.right, node.right
-        if a.is_left_child():
-            parent.hang_left(c)
-        elif a.is_right_child():
-            parent.hang_right(c)
-        else:
-            self.root = c
-            c.parent = None
-        c.hang_left(b)
-        c.hang_right(a)
-        b.hang_left(a_sub)
-        b.hang_right(b_sub)
-        a.hang_left(c_sub)
-        a.hang_right(d_sub)
-        a.update_invariants()
-        b.update_invariants()
-        c.update_invariants()
 
 
 class TreeSet:
@@ -570,9 +582,15 @@ class TreeSet:
         дерево). Дерево должно содержать пары "ключ => ключ".
         :param keys: массив ключей дерева
         """
+        if m is None:
+            m = TreeMap()
         self.map = m
         for key in (keys or []):
             self.put(key)
+        self.map._new_node = self._new_node()
+
+    def _new_node(self):
+        return self.map._new_node
 
     def put(self, key: Any) -> None:
         """ Поместить ключ в дерево. """
@@ -601,6 +619,13 @@ class TreeSet:
     def prev(self, key: Any) -> Any:
         """ Предыдущий ключ в множестве. """
         return self.map.prev_key_value(key)
+
+    def split(self, key: Any) -> Tuple['TreeSet', 'TreeSet']:
+        a, b = self.map.split(key)
+        return self.__class__(a), self.__class__(b)
+
+    def merge(self, b: 'TreeSet') -> None:
+        self.map.merge(b.map)
 
     def __len__(self):
         return self.map.__len__()
