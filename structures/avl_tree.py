@@ -223,8 +223,8 @@ class _Node(Generic[K, V]):
         a_sub < a < b_sub < b < c_sub
         Должно применяться, если высота поддерева a_sub меньше, чем c_sub.
         """
-        parent, a, b = self.parent, self, self.right
-        a_sub, b_sub, c_sub = self.left, self.right.left, self.right.right
+        a, b = self, self.right
+        a_sub, b_sub, c_sub = a.left, b.left, b.right
         _swap(a, b)
         a, b = b, a
         b.hang_left(a)
@@ -246,8 +246,8 @@ class _Node(Generic[K, V]):
         a_sub < b < b_sub < a < c_sub
         Должно применяться, если высота поддерева c_sub меньше, чем a_sub.
         """
-        parent, a, b = self.parent, self, self.left
-        a_sub, b_sub, c_sub = self.left.left, self.left.right, self.right
+        a, b = self, self.left
+        a_sub, b_sub, c_sub = b.left, b.right, a.right
         _swap(a, b)
         a, b = b, a
         b.hang_right(a)
@@ -272,9 +272,8 @@ class _Node(Generic[K, V]):
         Должно применяться, если высота поддерева a_sub меньше, чем высота узла
         c.
         """
-        parent, a, b, c = self.parent, self, self.right, self.right.left
-        a_sub, b_sub, c_sub, d_sub = self.left, self.right.left.left, \
-                                     self.right.left.right, self.right.right
+        a, b, c = self, self.right, self.right.left
+        a_sub, b_sub, c_sub, d_sub = a.left, c.left, c.right, b.right
         _swap(a, c)
         a, c = c, a
         c.hang_left(a)
@@ -302,9 +301,8 @@ class _Node(Generic[K, V]):
         Должно применяться, если высота поддерева d_sub меньше, чем высота узла
         c.
         """
-        parent, a, b, c = self.parent, self, self.left, self.left.right
-        a_sub, b_sub, c_sub, d_sub = self.left.left, self.left.right.left, \
-                                     self.left.right.right, self.right
+        a, b, c = self, self.left, self.left.right
+        a_sub, b_sub, c_sub, d_sub = b.left, c.left, c.right, a.right
         _swap(a, c)
         a, c = c, a
         c.hang_left(b)
