@@ -340,47 +340,48 @@ class _Node(Generic[K, V]):
         self.left = None
         self.right = None
 
+    @staticmethod
+    def merge_with_root(a: Optional['_Node'], b: Optional['_Node'],
+                        t: '_Node') -> '_Node':
+        """
+        Осуществляет слияние поддеревьев с корнями a и b при среднем элементе t.
+        Причем для всех элементов справедливо a < t < b. Переменные a и b могут
+        иметь значение None. Возвращает корень объединенного дерева.
+        """
+        t.update_invariants()
+        t.clear_relations()
+        if a is None and b is None:
+            return t
+        if a is None:
+            b.put(t)
+            return b
+        if b is None:
+            a.put(t)
+            return a
+        a.unbind_parent()
+        b.unbind_parent()
+
+        if abs(a.height - b.height) <= 1:
+            t.hang_right(b)
+            t.hang_left(a)
+            t.update_invariants()
+            return t
+        elif a.height > b.height:
+            t_new = _Node.merge_with_root(a.right, b, t)
+            a.hang_right(t_new)
+            t_new.repair()
+            return a
+        else:
+            t_new = _Node.merge_with_root(a, b.left, t)
+            b.hang_left(t_new)
+            t_new.repair()
+            return b
+
 
 def _swap(node1: _Node, node2: _Node) -> None:
     """ Обменять данные двух узлов (т.е. меняет ключи и значения узлов). """
     node1.key, node1.value, node2.key, node2.value \
         = node2.key, node2.value, node1.key, node1.value
-
-
-def _merge_with_root(a: Optional[_Node], b: Optional[_Node], t: _Node) -> _Node:
-    """
-    Осуществляет слияние поддеревьев с корнями a и b при среднем элементе t.
-    Причем для всех элементов справедливо a < t < b. Переменные a и b могут
-    иметь значение None. Возвращает корень объединенного дерева.
-    """
-    t.update_invariants()
-    t.clear_relations()
-    if a is None and b is None:
-        return t
-    if a is None:
-        b.put(t)
-        return b
-    if b is None:
-        a.put(t)
-        return a
-    a.unbind_parent()
-    b.unbind_parent()
-
-    if abs(a.height - b.height) <= 1:
-        t.hang_right(b)
-        t.hang_left(a)
-        t.update_invariants()
-        return t
-    elif a.height > b.height:
-        t_new = _merge_with_root(a.right, b, t)
-        a.hang_right(t_new)
-        t_new.repair()
-        return a
-    else:
-        t_new = _merge_with_root(a, b.left, t)
-        b.hang_left(t_new)
-        t_new.repair()
-        return b
 
 
 class TreeMap(Generic[K, V]):
@@ -527,14 +528,14 @@ class TreeMap(Generic[K, V]):
                 right_child = node.right
                 if right_child:
                     node.right.unbind_parent()
-                right = _merge_with_root(l2, right_child, node)
+                right = _Node.merge_with_root(l2, right_child, node)
                 return l1, right
             else:
                 r1, r2 = __split(node.right)
                 left_child = node.left
                 if left_child:
                     node.left.unbind_parent()
-                left = _merge_with_root(left_child, r1, node)
+                left = _Node.merge_with_root(left_child, r1, node)
                 return left, r2
         if not self.root:
             return self.__class__(), self.__class__()
@@ -561,7 +562,7 @@ class TreeMap(Generic[K, V]):
             b[mid.key] = mid.value
             self.root = b.root
             return
-        t = _merge_with_root(self.root, b.root, mid)
+        t = _Node.merge_with_root(self.root, b.root, mid)
         self.root = t
 
     def _new_node(self, key: K, value: V) -> _Node:
