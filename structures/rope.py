@@ -146,13 +146,19 @@ class Rope:
     """
 
     def __init__(self, s: str = None):
-        self.map = _RopeTreeMap()
+        def __build(s):
+            if len(s) == 1:
+                res = _RopeTreeMap()
+                res[None] = s
+                return res
+            middle = len(s) // 2
+            a, b = __build(s[:middle]), __build(s[middle:])
+            a.merge(b)
+            return a
         if not s:
-            return
-        self.map[None] = s[0]
-        for i in range(1, len(s)):
-            sec = Rope(s[i])
-            self.map.merge(sec.map)
+            self.map = _RopeTreeMap()
+        else:
+            self.map = __build(s)
 
     def __getitem__(self, i: int) -> str:
         """ Получить символ по индексу. """
