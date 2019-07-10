@@ -1,10 +1,10 @@
 import random
 import unittest
 
-from structures.char_set import CharSet
+from structures.rope import Rope
 
 
-class CharSetTests(unittest.TestCase):
+class RopeTests(unittest.TestCase):
 
     def validate_tree(self, tree, expected_str):
         if tree.map.root is None:
@@ -34,7 +34,7 @@ class CharSetTests(unittest.TestCase):
 
     def launch(self, s):
         self.s = s
-        self.cs = CharSet(s)
+        self.cs = Rope(s)
 
     def test_create_empty(self):
         self.launch('')
@@ -86,7 +86,7 @@ class CharSetTests(unittest.TestCase):
         for _ in range(150):
             s = ''.join([chr(random.randint(97, 122))
                          for _ in range(random.randint(1, 100))])
-            cs = CharSet(s)
+            cs = Rope(s)
             self.validate_tree(cs, s)
             i = random.randint(0, len(s) - 1)
             cs.swap(i)

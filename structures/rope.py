@@ -3,10 +3,10 @@ from typing import Tuple, Optional
 from structures.avl_tree import _Node, K, V, TreeMap
 
 
-class _NoKeyNode(_Node):
+class _RopeNode(_Node):
     """ Узел дерева с неявными ключами. """
 
-    def put(self, new_node: '_NoKeyNode') -> None:
+    def put(self, new_node: '_RopeNode') -> None:
         """ Помещает новый узел в поддерево. Новый узел всегда будет
         максимальным в поддереве. """
         def __inner(curr):
@@ -18,8 +18,8 @@ class _NoKeyNode(_Node):
         __inner(self)
 
     @staticmethod
-    def merge_with_root(a: Optional['_NoKeyNode'], b: Optional['_NoKeyNode'],
-                        t: '_NoKeyNode') -> '_NoKeyNode':
+    def merge_with_root(a: Optional['_RopeNode'], b: Optional['_RopeNode'],
+                        t: '_RopeNode') -> '_RopeNode':
         t.update_invariants()
         t.clear_relations()
         if a is None and b is None:
@@ -41,26 +41,26 @@ class _NoKeyNode(_Node):
             t.update_invariants()
             return t
         elif a.height > b.height:
-            t_new = _NoKeyNode.merge_with_root(a.right, b, t)
+            t_new = _RopeNode.merge_with_root(a.right, b, t)
             a.hang_right(t_new)
             t_new.repair()
             return a
         else:
-            t_new = _NoKeyNode.merge_with_root(a, b.left, t)
+            t_new = _RopeNode.merge_with_root(a, b.left, t)
             b.hang_left(t_new)
             t_new.repair()
             return b
 
 
-class _NoKeyTreeMap(TreeMap):
+class _RopeTreeMap(TreeMap):
     """
     Дерево поиска с неявными ключами.
     """
 
-    def _new_node(self, key: K, value: V) -> _NoKeyNode:
-        return _NoKeyNode(key, value)
+    def _new_node(self, key: K, value: V) -> _RopeNode:
+        return _RopeNode(key, value)
 
-    def merge(self, b: '_NoKeyTreeMap') -> None:
+    def merge(self, b: '_RopeTreeMap') -> None:
         if not self:
             self.root = b.root
             return
@@ -84,10 +84,10 @@ class _NoKeyTreeMap(TreeMap):
         else:
             self.root = mid.left
 
-        t = _NoKeyNode.merge_with_root(self.root, b.root, mid)
+        t = _RopeNode.merge_with_root(self.root, b.root, mid)
         self.root = t
 
-    def split(self, i: K) -> Tuple['_NoKeyTreeMap', '_NoKeyTreeMap']:
+    def split(self, i: K) -> Tuple['_RopeTreeMap', '_RopeTreeMap']:
         """
         Делит дерево на две части A и B по индексу i так, что все элементы
         от 0 до i включительно будут в дереве A, а остальные в B. Возвращает два
@@ -114,7 +114,7 @@ class _NoKeyTreeMap(TreeMap):
                 if left_child is not None:
                     node.left.unbind_parent()
                 node.update_invariants()
-                left = _NoKeyNode.merge_with_root(left_child, r1, node)
+                left = _RopeNode.merge_with_root(left_child, r1, node)
                 return left, r2
             else:
                 l1, l2 = __split(node.left, i)
@@ -122,20 +122,20 @@ class _NoKeyTreeMap(TreeMap):
                 if right_child:
                     right_child.unbind_parent()
                 node.update_invariants()
-                right = _NoKeyNode.merge_with_root(l2, right_child, node)
+                right = _RopeNode.merge_with_root(l2, right_child, node)
                 return l1, right
 
         if not self.root:
-            return _NoKeyTreeMap(), _NoKeyTreeMap()
+            return _RopeTreeMap(), _RopeTreeMap()
         a, b = __split(self.root, i)
         if a:
             a.parent = None
         if b:
             b.parent = None
-        return _NoKeyTreeMap(a), _NoKeyTreeMap(b)
+        return _RopeTreeMap(a), _RopeTreeMap(b)
 
 
-class CharSet:
+class Rope:
     """
     Структура, принимающая на вход строку и позволяющая за логарифмическое время
     выполнять две основные операции:
@@ -146,12 +146,12 @@ class CharSet:
     """
 
     def __init__(self, s: str = None):
-        self.map = _NoKeyTreeMap()
+        self.map = _RopeTreeMap()
         if not s:
             return
         self.map[None] = s[0]
         for i in range(1, len(s)):
-            sec = CharSet(s[i])
+            sec = Rope(s[i])
             self.map.merge(sec.map)
 
     def __getitem__(self, i: int) -> str:
