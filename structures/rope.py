@@ -176,8 +176,21 @@ class Rope:
         self.map = b
 
     def __str__(self) -> str:
-        res = [self.__getitem__(i) for i in range(len(self.map))]
-        return ''.join(res)
+        if self.map.root is None:
+            return ''
+        values = []
+        nodes = [self.map.root]
+        while nodes:
+            node = nodes.pop()
+            if type(node) is not _RopeNode:
+                values.append(node)
+                continue
+            if node.right:
+                nodes.append(node.right)
+            nodes.append(node.value)
+            if node.left:
+                nodes.append(node.left)
+        return ''.join(values)
 
     def __len__(self):
         return len(self.map)
