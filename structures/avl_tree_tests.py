@@ -1,3 +1,4 @@
+import math
 import random
 import unittest
 from abc import ABC
@@ -28,24 +29,27 @@ class TreeMapTests(ABC):
             return
         self.assertIsNone(root.parent)
 
+        # Возвращает минимальное и максимальное значение в поддереве
         def __validate(node):
             left_height, right_height = 0, 0
             left_size, right_size = 0, 0
+            l_min, r_max = math.inf, -1 * math.inf
             if node.left:
                 self.assertEqual(node.left.parent, node)
-                self.assertLess(node.left.key, node.key)
+                l_min, l_max = __validate(node.left)
+                self.assertLess(l_max, node.key)
                 left_height = node.left.height
                 left_size = node.left.size
-                __validate(node.left)
             if node.right:
                 self.assertEqual(node.right.parent, node)
-                self.assertGreater(node.right.key, node.key)
+                r_min, r_max = __validate(node.right)
+                self.assertGreater(r_min, node.key)
                 right_height = node.right.height
                 right_size = node.right.size
-                __validate(node.right)
             self.assertTrue(abs(left_height - right_height) <= 1)
             self.assertEqual(node.height, max(left_height, right_height) + 1)
             self.assertEqual(node.size, left_size + right_size + 1)
+            return min(node.key, l_min), max(node.key, r_max)
         __validate(root)
 
 

@@ -1,3 +1,4 @@
+import math
 import random
 import unittest
 from abc import ABC
@@ -31,14 +32,16 @@ class SplayMapTests(ABC):
         self.assertIsNone(root.parent)
 
         def __validate(node):
+            l_min, r_max = math.inf, -1 * math.inf
             if node.left:
                 self.assertEqual(node.left.parent, node)
-                self.assertLess(node.left.key, node.key)
-                __validate(node.left)
+                l_min, l_max = __validate(node.left)
+                self.assertLess(l_max, node.key)
             if node.right:
                 self.assertEqual(node.right.parent, node)
-                self.assertGreater(node.right.key, node.key)
-                __validate(node.right)
+                r_min, r_max = __validate(node.right)
+                self.assertGreater(r_min, node.key)
+            return min(node.key, l_min), max(node.key, r_max)
         __validate(root)
 
 
