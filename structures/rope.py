@@ -9,13 +9,11 @@ class _RopeNode(_Node):
     def put(self, new_node: '_RopeNode') -> None:
         """ Помещает новый узел в поддерево. Новый узел всегда будет
         максимальным в поддереве. """
-        def __inner(curr):
-                if curr.right is None:
-                    curr.hang_right(new_node)
-                    curr.repair()
-                else:
-                    __inner(curr.right)
-        __inner(self)
+        curr = self
+        while curr.right is not None:
+            curr = curr.right
+        curr.hang_right(new_node)
+        curr.repair()
 
     @staticmethod
     def merge_with_root(a: Optional['_RopeNode'], b: Optional['_RopeNode'],
