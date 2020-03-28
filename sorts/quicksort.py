@@ -28,7 +28,7 @@ def quick_sort_no_tail_recursion(lst, l=0, r=None):
         return
     while l < r:
         m = partition(lst, l, r)
-        quick_sort_random(lst, l, m - 1)
+        quick_sort_no_tail_recursion(lst, l, m - 1)
         l = m + 1
 
 
